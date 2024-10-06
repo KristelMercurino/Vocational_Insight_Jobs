@@ -1,0 +1,5 @@
+sqlalchemy
+pymysql
+requests
+serpapi
+python-dotenv
