@@ -119,7 +119,7 @@ def almacenar_noticias_en_db(results):
         imagen_noticia = result.get("thumbnail", "") 
         fecha_publicacion = result["posted_day"]
 
-        print(f"Procesando noticia: {titulo}, fecha: {fecha_publicacion}, link: {link_noticia}")
+        #print(f"Procesando noticia: {titulo}, fecha: {fecha_publicacion}, link: {link_noticia}")
 
         # Verificar si la noticia con esa URL ya existe
         noticia_existente = session.query(Noticias).filter_by(link_noticia=link_noticia).first()
