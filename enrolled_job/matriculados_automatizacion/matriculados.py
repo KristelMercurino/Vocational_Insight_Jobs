@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import rarfile
-from io import BytesIO
+from io import BytesIO, StringIO
 import pyunpack
 from patoolib import extract_archive
 from sqlalchemy import create_engine, text
@@ -213,7 +213,7 @@ def main():
 
             if csv_file:
                 # Check if the file has already been processed
-                with engine.connect() as connection:
+                with engine.begin() as connection:  # Use engine.begin() for automatic commit
                     query = text("SELECT COUNT(*) FROM jobs_log WHERE file_name = :file_name")
                     result = connection.execute(query, {"file_name": csv_file}).scalar()
                     if result > 0:
@@ -300,7 +300,10 @@ def main():
         logging.info("DataFrame created successfully.")
 
         logging.info("DataFrame Information:")
-        logging.info(df.info())
+        buffer = StringIO()
+        df.info(buf=buffer)
+        info_str = buffer.getvalue()
+        logging.info(info_str)
 
         # Rename the columns
         df.rename(columns=matriculas_rename, inplace=True)
@@ -334,13 +337,17 @@ def main():
             end = start + chunksize_db
             logging.info(f"Inserting chunk {i} of {total_chunks} (indices {start} to {end-1})")
             try:
-                df2.iloc[start:end].to_sql('registro_matriculas_2', con=engine, if_exists='append', index=False)
+                df2.iloc[start:end].to_sql('registro_matriculas', con=engine, if_exists='append', index=False)
                 logging.info(f"Chunk {i} inserted successfully.")
+                # Remove or comment out the break after testing
+                # break
             except Exception as e:
                 logging.error(f"Failed to insert chunk {i}: {e}")
 
+        logging.info("All chunks inserted successfully.")
+
         # Log the processed file in jobs_log
-        with engine.connect() as connection:
+        with engine.begin() as connection:  # Use engine.begin() for automatic commit
             exec_date = datetime.now()
             try:
                 insert_query = text("""
@@ -357,7 +364,7 @@ def main():
             except Exception as e:
                 logging.error(f"Failed to log processed file {filename} in jobs_log: {e}")
 
-        logging.info("All chunks inserted successfully.")
+        logging.info("Script main.py finished execution.")
 
     except Exception as e:
         logging.critical(f"Critical error in the script: {e}", exc_info=True)
@@ -365,4 +372,4 @@ def main():
     logging.info("Script main.py finished execution.")
 
 if __name__ == "__main__":
-        main()
+    main()
