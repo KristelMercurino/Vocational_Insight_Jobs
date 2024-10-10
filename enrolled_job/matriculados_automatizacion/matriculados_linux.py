@@ -335,17 +335,17 @@ def main():
             return
 
         # Insert the data into the database in chunks
-        chunksize_db = 10000
+        chunksize_db = 10
         total_chunks = (len(df2) + chunksize_db - 1) // chunksize_db  # Calculate total number of chunks
 
         for i, start in enumerate(range(0, len(df2), chunksize_db), start=1):
             end = start + chunksize_db
             logging.info(f"Inserting chunk {i} of {total_chunks} (indices {start} to {end-1})")
             try:
-                df2.iloc[start:end].to_sql('registro_matriculas', con=engine, if_exists='append', index=False)
+                df2.iloc[start:end].to_sql('registro_matriculas_1', con=engine, if_exists='append', index=False)
                 logging.info(f"Chunk {i} inserted successfully.")
                 # Remove or comment out the break after testing
-                # break
+                break
             except Exception as e:
                 logging.error(f"Failed to insert chunk {i}: {e}")
 
