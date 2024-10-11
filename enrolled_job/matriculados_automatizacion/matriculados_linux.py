@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import subprocess
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.exc import SQLAlchemyError  # Importar excepción específica
 import pandas as pd
 import tempfile
@@ -32,6 +32,21 @@ def setup_logging():
             logging.StreamHandler()  # Opcional: también loguear en consola
         ]
     )
+
+def get_db_columns(engine, table_name):
+    """
+    Obtiene las columnas de una tabla específica en la base de datos.
+    """
+    inspector = inspect(engine)
+    try:
+        columns = inspector.get_columns(table_name)
+        db_columns = [column['name'] for column in columns]
+        logging.info(f"Columnas en la tabla '{table_name}': {db_columns}")
+        return db_columns
+    except Exception as e:
+        error_message = str(e)[:300]
+        logging.error(f"Fallo al obtener las columnas de la tabla '{table_name}': {error_message}")
+        return []
 
 def main():
     # Configurar logging
@@ -63,6 +78,14 @@ def main():
         # Crear el engine de la base de datos
         engine = create_engine(DB_URI)
         logging.info("Engine de la base de datos creado exitosamente.")
+
+        # Obtener las columnas de la tabla de destino
+        table_name = 'registro_matriculas_1'
+        db_columns = get_db_columns(engine, table_name)
+
+        if not db_columns:
+            logging.critical(f"No se pudieron obtener las columnas de la tabla '{table_name}'. Abortando ejecución.")
+            return
 
         # Diccionario para renombrar columnas
         matriculas_rename = {
@@ -271,17 +294,17 @@ def main():
                             'forma_ingreso', 'year', 'preprocessed_at', 'processed_at'
                         ]
 
-                        # Verificar si todas las columnas existen
-                        missing_cols = set(desired_columns) - set(chunk.columns)
-                        if missing_cols:
-                            logging.error(f"Faltan columnas en el chunk: {', '.join(missing_cols)}")
-                            continue
+                        # Filtrar solo las columnas que existen en la base de datos
+                        available_columns = [col for col in desired_columns if col in db_columns]
+                        missing_columns = set(desired_columns) - set(available_columns)
+                        if missing_columns:
+                            logging.warning(f"Faltan columnas en la tabla '{table_name}': {', '.join(missing_columns)}")
 
-                        df2 = chunk[desired_columns]
+                        df2 = chunk[available_columns]
 
                         # Insertar el chunk en la base de datos
                         try:
-                            df2.to_sql('registro_matriculas_1', con=engine, if_exists='append', index=False, method='multi', chunksize=500)
+                            df2.to_sql(table_name, con=engine, if_exists='append', index=False, method='multi', chunksize=500)
                             logging.info(f"Chunk de tamaño {len(df2)} insertado exitosamente en la base de datos.")
                         except SQLAlchemyError as e:
                             # Registrar solo el mensaje de error sin las filas
