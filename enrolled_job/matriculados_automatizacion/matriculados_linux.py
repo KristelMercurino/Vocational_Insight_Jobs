@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import subprocess
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError  # Importar excepción específica
 import pandas as pd
 import tempfile
 from dotenv import load_dotenv
@@ -233,8 +234,9 @@ def main():
                                 "preprocessed_at": item["preprocessed_at"]
                             })
                             logging.info(f"Registro del archivo omitido {csv_files[0]} en jobs_log.")
-                        except Exception as e:
-                            logging.error(f"Fallo al registrar el archivo omitido {csv_files[0]} en jobs_log: {e}")
+                        except SQLAlchemyError as e:
+                            # Registrar solo el mensaje de error sin las filas
+                            logging.error(f"Fallo al registrar el archivo omitido {csv_files[0]} en jobs_log: {str(e)}")
                         os.remove(rar_file_path)
                         continue
                     else:
@@ -279,11 +281,11 @@ def main():
                         try:
                             df2.to_sql('registro_matriculas_1', con=engine, if_exists='append', index=False, method='multi', chunksize=500)
                             logging.info(f"Chunk de tamaño {len(df2)} insertado exitosamente en la base de datos.")
-                        except Exception as e:
+                        except SQLAlchemyError as e:
                             # Registrar solo el mensaje de error sin las filas
-                            logging.error(f"Fallo al insertar chunk en la base de datos: {e}")
+                            logging.error(f"Fallo al insertar chunk en la base de datos: {str(e)}")
                 except Exception as e:
-                    logging.error(f"Fallo al procesar el archivo CSV {csv_files[0]}: {e}")
+                    logging.error(f"Fallo al procesar el archivo CSV {csv_files[0]}: {str(e)}")
                     os.remove(rar_file_path)
                     continue
 
@@ -302,8 +304,9 @@ def main():
                             "preprocessed_at": item["preprocessed_at"]
                         })
                         logging.info(f"Registro del archivo procesado {csv_files[0]} en jobs_log.")
-                    except Exception as e:
-                        logging.error(f"Fallo al registrar el archivo procesado {csv_files[0]} en jobs_log: {e}")
+                    except SQLAlchemyError as e:
+                        # Registrar solo el mensaje de error sin las filas
+                        logging.error(f"Fallo al registrar el archivo procesado {csv_files[0]} en jobs_log: {str(e)}")
 
                 # Eliminar el archivo .rar descargado
                 os.remove(rar_file_path)
@@ -312,7 +315,7 @@ def main():
         logging.info("Todos los archivos fueron procesados exitosamente.")
 
     except Exception as e:
-        logging.critical(f"Error crítico en el script: {e}", exc_info=True)
+        logging.critical(f"Error crítico en el script: {str(e)}", exc_info=True)
 
     logging.info("Script main_optimized.py finalizó su ejecución.")
 
