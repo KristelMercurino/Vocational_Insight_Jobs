@@ -215,7 +215,13 @@ def main():
                 # Verificar si el archivo ya fue procesado
                 with engine.begin() as connection:
                     query = text("SELECT COUNT(*) FROM jobs_log WHERE file_name = :file_name")
-                    result = connection.execute(query, {"file_name": csv_files[0]}).scalar()
+                    try:
+                        result = connection.execute(query, {"file_name": csv_files[0]}).scalar()
+                    except Exception as e:
+                        logging.error(f"Database query failed while checking jobs_log for {csv_files[0]}: {e}")
+                        os.remove(rar_file_path)
+                        continue
+
                     if result > 0:
                         logging.info(f"File {csv_files[0]} has already been processed. Skipping.")
                         # Insertar registro de archivo omitido
@@ -282,7 +288,9 @@ def main():
                             df2.to_sql('registro_matriculas_1', con=engine, if_exists='append', index=False, method='multi', chunksize=500)
                             logging.info(f"Inserted a chunk of size {len(df2)} into the database.")
                         except Exception as e:
-                            logging.error(f"Failed to insert chunk into the database: {e}")
+                            logging.error(f"Failed to insert chunk into the database: {str(e)}")  # Solo el mensaje de error
+                            # Opcional: Puedes optar por continuar o detener el proceso según la gravedad
+                            continue
 
                     logging.info(f"CSV file {csv_files[0]} processed successfully.")
                 except Exception as e:
@@ -306,7 +314,7 @@ def main():
                         })
                         logging.info(f"Logged processed file {csv_files[0]} in jobs_log.")
                     except Exception as e:
-                        logging.error(f"Failed to log processed file {csv_files[0]} in jobs_log: {e}")
+                        logging.error(f"Failed to log processed file {csv_files[0]} in jobs_log: {str(e)}")  # Solo el mensaje de error
 
                 # Eliminar el archivo .rar descargado
                 os.remove(rar_file_path)
