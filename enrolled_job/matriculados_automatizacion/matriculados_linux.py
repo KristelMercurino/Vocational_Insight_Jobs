@@ -13,36 +13,36 @@ import logging
 
 def setup_logging():
     """
-    Configures the logging system.
+    Configura el sistema de logging.
     """
     log_directory = "/home/ubuntu/Vocational_Insight_Jobs/logs"
     log_filename = "enrolled_job_logs.log"
     log_path = os.path.join(log_directory, log_filename)
 
-    # Create log directory if it doesn't exist
+    # Crear directorio de logs si no existe
     os.makedirs(log_directory, exist_ok=True)
 
-    # Basic logging configuration
+    # Configuración básica de logging
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
             logging.FileHandler(log_path),
-            logging.StreamHandler()  # Optional: also log to console
+            logging.StreamHandler()  # Opcional: también loguear en consola
         ]
     )
 
 def main():
-    # Configure logging
+    # Configurar logging
     setup_logging()
-    logging.info("Script main_optimized.py started.")
+    logging.info("Script main_optimized.py iniciado.")
 
     try:
-        # Load environment variables from .env file
+        # Cargar variables de entorno desde .env
         load_dotenv()
-        logging.info("Environment variables loaded successfully.")
+        logging.info("Variables de entorno cargadas exitosamente.")
 
-        # Database configuration
+        # Configuración de la base de datos
         DB_USER = os.getenv("DB_USER")
         DB_PASS = os.getenv("DB_PASS")
         DB_HOST = os.getenv("DB_HOST")
@@ -50,20 +50,20 @@ def main():
         DB_NAME = os.getenv("DB_NAME")
         WINRAR_PATH = os.getenv("WINRAR_PATH", "C:\\Program Files\\WinRAR\\WinRAR.exe")
 
-        # Verify all necessary environment variables are present
+        # Verificar que todas las variables de entorno necesarias estén presentes
         if not all([DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME]):
-            logging.error("Missing required environment variables for database configuration.")
+            logging.error("Faltan variables de entorno requeridas para la configuración de la base de datos.")
             return
 
-        # Define the MariaDB connection URI
+        # Definir el URI de conexión a MariaDB
         DB_URI = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-        logging.info("Database connection URI constructed.")
+        logging.info("URI de conexión a la base de datos construido.")
 
-        # Create the database engine
+        # Crear el engine de la base de datos
         engine = create_engine(DB_URI)
-        logging.info("Database engine created successfully.")
+        logging.info("Engine de la base de datos creado exitosamente.")
 
-        # Dictionary for renaming columns
+        # Diccionario para renombrar columnas
         matriculas_rename = {
             "cat_periodo": "periodo",
             "id": "id_matricula",
@@ -121,23 +121,23 @@ def main():
 
         def extract_data():
             """
-            Extracts .rar file links from the specified webpage, identifies the year,
-            and returns a list of dictionaries con la información necesaria.
+            Extrae enlaces de archivos .rar de la página especificada, identifica el año,
+            y retorna una lista de diccionarios con la información extraída.
             """
             url = "https://datosabiertos.mineduc.cl/matricula-en-educacion-superior/"
             try:
                 response = requests.get(url, timeout=30)
-                logging.info(f"Accessing URL: {url}")
+                logging.info(f"Accediendo a la URL: {url}")
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
-                logging.error(f"HTTP request failed: {e}")
+                logging.error(f"Fallo en la petición HTTP: {e}")
                 return []
 
             data = []
 
             soup = BeautifulSoup(response.content, "html.parser")
             links = soup.find_all('a', href=True)
-            logging.info(f"Found {len(links)} links on the page.")
+            logging.info(f"Se encontraron {len(links)} enlaces en la página.")
 
             for link in links:
                 href = link['href']
@@ -152,14 +152,14 @@ def main():
                             'preprocessed_at': datetime.now()
                         })
 
-            logging.info(f"Found {len(data)} .rar files to process.")
+            logging.info(f"Se encontraron {len(data)} archivos .rar para procesar.")
             return data
 
         # Extraer datos
         data = extract_data()
 
         if not data:
-            logging.warning("No .rar files found to process.")
+            logging.warning("No se encontraron archivos .rar para procesar.")
             return
 
         # Procesar los archivos .rar uno por uno para minimizar el uso de memoria
@@ -167,7 +167,7 @@ def main():
             year = item['year']
             url = item['url']
 
-            logging.info(f"Downloading file for year {year} from {url}.")
+            logging.info(f"Descargando archivo para el año {year} desde {url}.")
 
             # Descargar el archivo .rar
             try:
@@ -178,12 +178,12 @@ def main():
                             if chunk:
                                 tmp_rar.write(chunk)
                 rar_file_path = tmp_rar.name
-                logging.info(f"Downloaded and saved temporary file {rar_file_path}.")
+                logging.info(f"Descargado y guardado archivo temporal {rar_file_path}.")
             except requests.exceptions.RequestException as e:
-                logging.error(f"Failed to download {year}.rar: {e}")
+                logging.error(f"Fallo al descargar {year}.rar: {e}")
                 continue
             except IOError as e:
-                logging.error(f"Failed to write temporary .rar file for {year}: {e}")
+                logging.error(f"Fallo al escribir el archivo temporal .rar para {year}: {e}")
                 continue
 
             # Descomprimir el archivo .rar usando un directorio temporal
@@ -191,39 +191,34 @@ def main():
                 try:
                     # Verificar si WINRAR_PATH existe y es ejecutable
                     if not os.path.isfile(WINRAR_PATH) or not os.access(WINRAR_PATH, os.X_OK):
-                        logging.error(f"WINRAR_PATH '{WINRAR_PATH}' does not exist or is not executable.")
+                        logging.error(f"WINRAR_PATH '{WINRAR_PATH}' no existe o no es ejecutable.")
                         os.remove(rar_file_path)
                         continue
 
-                    subprocess.run([WINRAR_PATH, 'x', '-y', rar_file_path, extract_dir], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    logging.info(f"Extracted {rar_file_path} successfully to {extract_dir}.")
+                    subprocess.run([WINRAR_PATH, 'x', '-y', rar_file_path, extract_dir],
+                                   check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    logging.info(f"Archivo {rar_file_path} descomprimido exitosamente en {extract_dir}.")
                 except subprocess.CalledProcessError as e:
-                    logging.error(f"Failed to extract {year}.rar: {e.stderr.decode().strip()}")
+                    logging.error(f"Fallo al descomprimir {year}.rar: {e.stderr.decode().strip()}")
                     os.remove(rar_file_path)
                     continue
 
                 # Encontrar el archivo CSV dentro del directorio extraído
                 csv_files = [f for f in os.listdir(extract_dir) if f.endswith(".csv") and f"{year}" in f]
                 if not csv_files:
-                    logging.warning(f"No CSV file found in {year}.rar.")
+                    logging.warning(f"No se encontró archivo CSV en {year}.rar.")
                     os.remove(rar_file_path)
                     continue
 
                 csv_file_path = os.path.join(extract_dir, csv_files[0])
-                logging.info(f"Processing CSV file: {csv_file_path}")
+                logging.info(f"Procesando archivo CSV: {csv_file_path}")
 
                 # Verificar si el archivo ya fue procesado
                 with engine.begin() as connection:
                     query = text("SELECT COUNT(*) FROM jobs_log WHERE file_name = :file_name")
-                    try:
-                        result = connection.execute(query, {"file_name": csv_files[0]}).scalar()
-                    except Exception as e:
-                        logging.error(f"Database query failed while checking jobs_log for {csv_files[0]}: {e}")
-                        os.remove(rar_file_path)
-                        continue
-
+                    result = connection.execute(query, {"file_name": csv_files[0]}).scalar()
                     if result > 0:
-                        logging.info(f"File {csv_files[0]} has already been processed. Skipping.")
+                        logging.info(f"El archivo {csv_files[0]} ya ha sido procesado. Omitiendo.")
                         # Insertar registro de archivo omitido
                         exec_date = datetime.now()
                         try:
@@ -237,19 +232,16 @@ def main():
                                 "exec_date": exec_date,
                                 "preprocessed_at": item["preprocessed_at"]
                             })
-                            logging.info(f"Logged skipped file {csv_files[0]} in jobs_log.")
+                            logging.info(f"Registro del archivo omitido {csv_files[0]} en jobs_log.")
                         except Exception as e:
-                            logging.error(f"Failed to log skipped file {csv_files[0]} in jobs_log: {e}")
+                            logging.error(f"Fallo al registrar el archivo omitido {csv_files[0]} en jobs_log: {e}")
                         os.remove(rar_file_path)
                         continue
                     else:
-                        logging.info(f"Processing new file: {csv_files[0]}")
+                        logging.info(f"Procesando nuevo archivo: {csv_files[0]}")
 
                 # Procesar el archivo CSV en chunks
                 try:
-                    # Definir los nombres de las columnas
-                    columns = None  # Pandas lo detecta automáticamente
-
                     # Leer y procesar el CSV en chunks
                     chunksize = 2000  # Puedes ajustar este valor según tus necesidades
                     for chunk in pd.read_csv(csv_file_path, sep=';', encoding='utf-8', chunksize=chunksize, dtype=str):
@@ -278,7 +270,7 @@ def main():
                         # Verificar si todas las columnas existen
                         missing_cols = set(desired_columns) - set(chunk.columns)
                         if missing_cols:
-                            logging.error(f"Missing columns in the chunk: {missing_cols}")
+                            logging.error(f"Faltan columnas en el chunk: {missing_cols}")
                             continue
 
                         df2 = chunk[desired_columns]
@@ -286,19 +278,16 @@ def main():
                         # Insertar el chunk en la base de datos
                         try:
                             df2.to_sql('registro_matriculas_1', con=engine, if_exists='append', index=False, method='multi', chunksize=500)
-                            logging.info(f"Inserted a chunk of size {len(df2)} into the database.")
+                            logging.info(f"Chunk de tamaño {len(df2)} insertado exitosamente en la base de datos.")
                         except Exception as e:
-                            logging.error(f"Failed to insert chunk into the database: {str(e)}")  # Solo el mensaje de error
-                            # Opcional: Puedes optar por continuar o detener el proceso según la gravedad
-                            continue
-
-                    logging.info(f"CSV file {csv_files[0]} processed successfully.")
+                            # Registrar solo el mensaje de error sin las filas
+                            logging.error(f"Fallo al insertar chunk en la base de datos: {e}")
                 except Exception as e:
-                    logging.error(f"Failed to process CSV file {csv_files[0]}: {e}")
+                    logging.error(f"Fallo al procesar el archivo CSV {csv_files[0]}: {e}")
                     os.remove(rar_file_path)
                     continue
 
-                # Log the processed file en jobs_log
+                # Registrar el archivo procesado en jobs_log
                 with engine.begin() as connection:
                     exec_date = datetime.now()
                     try:
@@ -312,20 +301,20 @@ def main():
                             "exec_date": exec_date,
                             "preprocessed_at": item["preprocessed_at"]
                         })
-                        logging.info(f"Logged processed file {csv_files[0]} in jobs_log.")
+                        logging.info(f"Registro del archivo procesado {csv_files[0]} en jobs_log.")
                     except Exception as e:
-                        logging.error(f"Failed to log processed file {csv_files[0]} in jobs_log: {str(e)}")  # Solo el mensaje de error
+                        logging.error(f"Fallo al registrar el archivo procesado {csv_files[0]} en jobs_log: {e}")
 
                 # Eliminar el archivo .rar descargado
                 os.remove(rar_file_path)
-                logging.info(f"Removed temporary file {rar_file_path}.")
+                logging.info(f"Archivo temporal {rar_file_path} eliminado.")
 
-        logging.info("All files processed successfully.")
+        logging.info("Todos los archivos fueron procesados exitosamente.")
 
     except Exception as e:
-        logging.critical(f"Critical error in the script: {e}", exc_info=True)
+        logging.critical(f"Error crítico en el script: {e}", exc_info=True)
 
-    logging.info("Script main_optimized.py finished execution.")
+    logging.info("Script main_optimized.py finalizó su ejecución.")
 
 if __name__ == "__main__":
     main()
