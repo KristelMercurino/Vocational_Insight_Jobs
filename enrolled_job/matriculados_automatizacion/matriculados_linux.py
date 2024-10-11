@@ -200,7 +200,8 @@ def main():
                                    check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     logging.info(f"Archivo {rar_file_path} descomprimido exitosamente en {extract_dir}.")
                 except subprocess.CalledProcessError as e:
-                    logging.error(f"Fallo al descomprimir {year}.rar: {e.stderr.decode().strip()}")
+                    error_message = e.stderr.decode().strip()[:300]
+                    logging.error(f"Fallo al descomprimir {year}.rar: {error_message}")
                     os.remove(rar_file_path)
                     continue
 
@@ -236,7 +237,8 @@ def main():
                             logging.info(f"Registro del archivo omitido {csv_files[0]} en jobs_log.")
                         except SQLAlchemyError as e:
                             # Registrar solo el mensaje de error sin las filas
-                            logging.error(f"Fallo al registrar el archivo omitido {csv_files[0]} en jobs_log: {str(e)}")
+                            error_message = str(e)[:300]
+                            logging.error(f"Fallo al registrar el archivo omitido {csv_files[0]} en jobs_log: {error_message}")
                         os.remove(rar_file_path)
                         continue
                     else:
@@ -272,7 +274,7 @@ def main():
                         # Verificar si todas las columnas existen
                         missing_cols = set(desired_columns) - set(chunk.columns)
                         if missing_cols:
-                            logging.error(f"Faltan columnas en el chunk: {missing_cols}")
+                            logging.error(f"Faltan columnas en el chunk: {', '.join(missing_cols)}")
                             continue
 
                         df2 = chunk[desired_columns]
@@ -283,9 +285,11 @@ def main():
                             logging.info(f"Chunk de tamaño {len(df2)} insertado exitosamente en la base de datos.")
                         except SQLAlchemyError as e:
                             # Registrar solo el mensaje de error sin las filas
-                            logging.error(f"Fallo al insertar chunk en la base de datos: {str(e)}")
+                            error_message = str(e)[:300]
+                            logging.error(f"Fallo al insertar chunk en la base de datos: {error_message}")
                 except Exception as e:
-                    logging.error(f"Fallo al procesar el archivo CSV {csv_files[0]}: {str(e)}")
+                    error_message = str(e)[:300]
+                    logging.error(f"Fallo al procesar el archivo CSV {csv_files[0]}: {error_message}")
                     os.remove(rar_file_path)
                     continue
 
@@ -306,7 +310,8 @@ def main():
                         logging.info(f"Registro del archivo procesado {csv_files[0]} en jobs_log.")
                     except SQLAlchemyError as e:
                         # Registrar solo el mensaje de error sin las filas
-                        logging.error(f"Fallo al registrar el archivo procesado {csv_files[0]} en jobs_log: {str(e)}")
+                        error_message = str(e)[:300]
+                        logging.error(f"Fallo al registrar el archivo procesado {csv_files[0]} en jobs_log: {error_message}")
 
                 # Eliminar el archivo .rar descargado
                 os.remove(rar_file_path)
@@ -315,7 +320,9 @@ def main():
         logging.info("Todos los archivos fueron procesados exitosamente.")
 
     except Exception as e:
-        logging.critical(f"Error crítico en el script: {str(e)}", exc_info=True)
+        # Registrar solo los primeros 300 caracteres del error crítico
+        error_message = str(e)[:300]
+        logging.critical(f"Error crítico en el script: {error_message}", exc_info=False)
 
     logging.info("Script main_optimized.py finalizó su ejecución.")
 
