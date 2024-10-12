@@ -33,19 +33,19 @@ def setup_logging():
         ]
     )
 
-def get_db_columns(engine, table_name):
+def get_table_columns(engine, table_name):
     """
-    Obtiene las columnas de una tabla específica en la base de datos.
+    Obtiene la lista de columnas existentes en una tabla de la base de datos.
     """
     inspector = inspect(engine)
     try:
-        columns = inspector.get_columns(table_name)
-        db_columns = [column['name'] for column in columns]
-        logging.info(f"Columnas en la tabla '{table_name}': {db_columns}")
-        return db_columns
+        columns_info = inspector.get_columns(table_name)
+        table_columns = [column['name'] for column in columns_info]
+        logging.info(f"Columnas existentes en la tabla '{table_name}': {table_columns}")
+        return table_columns
     except Exception as e:
         error_message = str(e)[:300]
-        logging.error(f"Fallo al obtener las columnas de la tabla '{table_name}': {error_message}")
+        logging.error(f"Fallo al obtener columnas de la tabla '{table_name}': {error_message}")
         return []
 
 def main():
@@ -79,12 +79,11 @@ def main():
         engine = create_engine(DB_URI)
         logging.info("Engine de la base de datos creado exitosamente.")
 
-        # Obtener las columnas de la tabla de destino
-        table_name = 'registro_matriculas_1'
-        db_columns = get_db_columns(engine, table_name)
-
-        if not db_columns:
-            logging.critical(f"No se pudieron obtener las columnas de la tabla '{table_name}'. Abortando ejecución.")
+        # Obtener las columnas existentes en la tabla de destino
+        target_table = 'registro_matriculas_1'
+        table_columns = get_table_columns(engine, target_table)
+        if not table_columns:
+            logging.error(f"No se pudo obtener las columnas de la tabla '{target_table}'. Abortando el script.")
             return
 
         # Diccionario para renombrar columnas
@@ -280,7 +279,7 @@ def main():
                         # Renombrar columnas
                         chunk.rename(columns=matriculas_rename, inplace=True)
 
-                        # Seleccionar las columnas necesarias
+                        # Seleccionar las columnas necesarias que existen en la tabla
                         desired_columns = [
                             'periodo', 'id_matricula', 'codigo_unico', 'mrun', 'gen_alu', 'fec_nac_alumno', 
                             'rango_edad', 'anio_ing_carr_ori', 'sem_ing_carr_ori', 'anio_ing_carr_act',
@@ -294,17 +293,17 @@ def main():
                             'forma_ingreso', 'year', 'preprocessed_at', 'processed_at'
                         ]
 
-                        # Filtrar solo las columnas que existen en la base de datos
-                        available_columns = [col for col in desired_columns if col in db_columns]
-                        missing_columns = set(desired_columns) - set(available_columns)
+                        # Filtrar las columnas que realmente existen en la tabla
+                        existing_columns = [col for col in desired_columns if col in table_columns]
+                        missing_columns = set(desired_columns) - set(existing_columns)
                         if missing_columns:
-                            logging.warning(f"Faltan columnas en la tabla '{table_name}': {', '.join(missing_columns)}")
-
-                        df2 = chunk[available_columns]
+                            logging.warning(f"Faltan columnas en la tabla '{target_table}': {', '.join(missing_columns)}")
+                        
+                        df2 = chunk[existing_columns]
 
                         # Insertar el chunk en la base de datos
                         try:
-                            df2.to_sql(table_name, con=engine, if_exists='append', index=False, method='multi', chunksize=500)
+                            df2.to_sql(target_table, con=engine, if_exists='append', index=False, method='multi', chunksize=500)
                             logging.info(f"Chunk de tamaño {len(df2)} insertado exitosamente en la base de datos.")
                         except SQLAlchemyError as e:
                             # Registrar solo el mensaje de error sin las filas
