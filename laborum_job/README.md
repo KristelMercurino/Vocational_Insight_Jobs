@@ -217,6 +217,12 @@ This tutorial guides you through deploying your Python-based web scraping bots t
 
    > **Note:** This installs necessary browser binaries for Playwright.
 
+   > **Note:** If playwrite needs additional dependeces error:
+
+   ```bash
+   playwright install-deps
+   ```
+
 ---
 
 ### **Step 7: Execute the Scripts**
@@ -255,16 +261,17 @@ This tutorial guides you through deploying your Python-based web scraping bots t
    
    ```cron
    # Run Area Scraper every 10 minutes
-   */10 * * * * /home/ubuntu/your-repo-name/env/bin/python /home/ubuntu/your-repo-name/scraper_laborum.py >> /home/ubuntu/Vocational_Insight_Jobs/logs/area_scraper.log 2>&1
+   */10 * * * * /home/ubuntu/Vocational_Insight_Jobs/laborum_job/env/bin/python /home/ubuntu/Vocational_Insight_Jobs/laborum_job/areas_scrapper_v2.py >> /home/ubuntu/Vocational_Insight_Jobs/logs/area_scraper.log 2>&1
 
    # Run Subarea Scraper every 10 minutes
-   */10 * * * * /home/ubuntu/your-repo-name/env/bin/python /home/ubuntu/your-repo-name/scraper_laborum_subareas.py >> /home/ubuntu/Vocational_Insight_Jobs/logs/subarea_scraper.log 2>&1
+   */10 * * * * /home/ubuntu/Vocational_Insight_Jobs/laborum_job/env/bin/python /home/ubuntu/Vocational_Insight_Jobs/laborum_job/subareas_scrapper_v2.py >> /home/ubuntu/Vocational_Insight_Jobs/logs/subarea_scraper.log 2>&1
 
    # Run Area Scraper once a month (e.g., on the 1st at midnight)
-   0 0 1 * * /home/ubuntu/your-repo-name/env/bin/python /home/ubuntu/your-repo-name/scraper_laborum.py >> /home/ubuntu/Vocational_Insight_Jobs/logs/area_scraper_monthly.log 2>&1
+   0 0 1 * * /home/ubuntu/Vocational_Insight_Jobs/laborum_job/env/bin/python /home/ubuntu/Vocational_Insight_Jobs/laborum_job/areas_scrapper_v2.py >> /home/ubuntu/Vocational_Insight_Jobs/logs/area_scraper_monthly.log 2>&1
 
    # Run Subarea Scraper once a month (e.g., on the 1st at 1 AM)
-   0 1 1 * * /home/ubuntu/your-repo-name/env/bin/python /home/ubuntu/your-repo-name/scraper_laborum_subareas.py >> /home/ubuntu/Vocational_Insight_Jobs/logs/subarea_scraper_monthly.log 2>&1
+   0 1 1 * * /home/ubuntu/Vocational_Insight_Jobs/laborum_job/env/bin/python /home/ubuntu/Vocational_Insight_Jobs/laborum_job/subareas_scrapper_v2.py >> /home/ubuntu/Vocational_Insight_Jobs/logs/subarea_scraper_monthly.log 2>&1
+
    ```
 
    > **Notes:**
