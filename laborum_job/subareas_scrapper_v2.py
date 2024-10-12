@@ -9,8 +9,30 @@ from sqlalchemy.exc import IntegrityError
 from playwright.sync_api import sync_playwright
 import pandas as pd
 
+# Definir la función para configurar logging
+def setup_logging():
+    """
+    Configura el sistema de logging.
+    """
+    log_directory = "/home/ubuntu/Vocational_Insight_Jobs/logs"
+    log_filename = "laborum.log"
+    log_path = os.path.join(log_directory, log_filename)
+
+    # Crear directorio de logs si no existe
+    os.makedirs(log_directory, exist_ok=True)
+
+    # Configuración básica de logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            logging.FileHandler(log_path),
+            logging.StreamHandler()  # Opcional: también loguear en consola
+        ]
+    )
+
 # Configurar logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+setup_logging()
 
 # Cargar variables de entorno
 load_dotenv()
@@ -259,12 +281,20 @@ def guardar_subareas_en_bd(subdata, session):
         session.rollback()
         logging.error(f"Error al insertar datos en 'laborum_subareas_links_2': {e}")
 
+def scrape_areas_links():
+    """
+    Esta función obtiene los enlaces más recientes por área para scrapear subáreas.
+    """
+    logging.info("Obteniendo los últimos enlaces por área para scrapear subáreas.")
+    ultimos_links_df = obtener_ultimos_links()
+    return ultimos_links_df
+
 def main():
     # Crear tablas si no existen
     crear_tablas()
     
     # Paso 1: Obtener los últimos enlaces por área
-    ultimos_links_df = obtener_ultimos_links()
+    ultimos_links_df = scrape_areas_links()
     
     if ultimos_links_df.empty:
         logging.error("No se obtuvieron enlaces recientes para las áreas. Terminando el script.")

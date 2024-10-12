@@ -9,8 +9,30 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import IntegrityError
 from playwright.sync_api import sync_playwright
 
+# Definir la función para configurar logging
+def setup_logging():
+    """
+    Configura el sistema de logging.
+    """
+    log_directory = "/home/ubuntu/Vocational_Insight_Jobs/logs"
+    log_filename = "laborum.log"
+    log_path = os.path.join(log_directory, log_filename)
+
+    # Crear directorio de logs si no existe
+    os.makedirs(log_directory, exist_ok=True)
+
+    # Configuración básica de logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            logging.FileHandler(log_path),
+            logging.StreamHandler()  # Opcional: también loguear en consola
+        ]
+    )
+
 # Configurar logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+setup_logging()
 
 # Cargar variables de entorno
 load_dotenv()
@@ -89,8 +111,13 @@ def scrape_data(url):
             viewport={"width": 1920, "height": 1080}
         )
         page = context.new_page()
-        page.goto(url, timeout=60000)
-        page.wait_for_load_state('networkidle', timeout=60000)
+        try:
+            page.goto(url, timeout=60000)
+            page.wait_for_load_state('networkidle', timeout=60000)
+        except Exception as e:
+            logging.error(f"Error al cargar la página {url}: {e}")
+            browser.close()
+            return []
         
         # Opcional: Ocultar el header si interfiere con la visualización
         try:
