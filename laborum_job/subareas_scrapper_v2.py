@@ -15,7 +15,7 @@ def setup_logging():
     Configura el sistema de logging.
     """
     log_directory = "/home/ubuntu/Vocational_Insight_Jobs/logs"
-    log_filename = "laborum.log"
+    log_filename = "laborum_subareas.log"
     log_path = os.path.join(log_directory, log_filename)
 
     # Crear directorio de logs si no existe
