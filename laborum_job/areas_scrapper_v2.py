@@ -119,20 +119,26 @@ def scrape_data(url):
             browser.close()
             return []
         
-        # Intentar ocultar el header si existe
+        # Opcional: Ocultar el header si interfiere con la visualización
         try:
-            header = page.query_selector("header")
+            # Utilizar XPath para seleccionar el header
+            header = page.query_selector("xpath=//*[@id='root']/div/header")
             if header:
-                header.evaluate("element => element.style.display = 'none';")
+                header.evaluate("el => el.style.display = 'none'")
                 logging.info("Header ocultado exitosamente.")
             else:
-                logging.warning("Header no encontrado.")
+                logging.warning("Header no encontrado para ocultar.")
         except Exception as e:
             logging.warning(f"No se pudo ocultar el header: {e}")
         
-        # Seleccionar todas las cards con el selector actualizado
-        # Actualiza este selector basado en la inspección actual del sitio web
-        cards = page.query_selector_all("div.job-card")  # Ejemplo: usa una clase estática más descriptiva
+        # Seleccionar todas las cards usando XPath
+        # Basado en el XPath proporcionado para las tarjetas
+        try:
+            cards = page.query_selector_all("xpath=//*[@id='root']/div/div[3]/div/div/div/div")
+        except Exception as e:
+            logging.error(f"Error al seleccionar las tarjetas: {e}")
+            browser.close()
+            return []
         
         if not cards:
             logging.error("No se encontraron cards con el selector proporcionado.")
@@ -144,15 +150,15 @@ def scrape_data(url):
         for idx, card in enumerate(cards, start=1):
             try:
                 # Extraer el nombre del área
-                nombre_area_element = card.query_selector("div.area-name")  # Actualiza el selector
+                nombre_area_element = card.query_selector("xpath=./div/div[1]")
                 nombre_area = nombre_area_element.inner_text().strip() if nombre_area_element else None
                 
                 # Extraer la media salarial
-                media_salarial_element = card.query_selector("div.salary-average")  # Actualiza el selector
+                media_salarial_element = card.query_selector("xpath=./div/div[2]/div/div[2]")
                 media_salarial = media_salarial_element.inner_text().strip() if media_salarial_element else None
                 
                 # Extraer la cantidad de salarios pretendidos
-                salarios_basados_element = card.query_selector("div.salary-count")  # Actualiza el selector
+                salarios_basados_element = card.query_selector("xpath=./div/div[2]/div/div[3]")
                 salarios_basados_text = salarios_basados_element.inner_text().strip() if salarios_basados_element else None
                 salarios_basados = re.findall(r'\d+', salarios_basados_text)[0] if salarios_basados_text else None
                 
@@ -240,7 +246,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
 # import os
