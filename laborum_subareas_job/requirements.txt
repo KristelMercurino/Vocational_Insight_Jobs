@@ -1,0 +1,23 @@
+# requirements.txt
+
+# Web Scraping
+playwright
+
+# Database ORM
+SQLAlchemy==2.0.16
+pymysql==1.0.3
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Data Handling
+pandas==2.2.3
+
+# Logging
+# (No additional packages needed; uses Python's built-in logging)
+
+# Utilities
+requests==2.31.0
+
+# Optional: If using asynchronous Playwright
+# playwright-asyncio==0.0.20
