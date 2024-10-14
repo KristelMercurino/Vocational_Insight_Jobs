@@ -1,13 +1,6 @@
 docker build -t gcr.io/vocational-insight-api/laborum-scraper-subareas:latest .
 docker push gcr.io/vocational-insight-api/laborum-scraper-subareas:latest
 
-gcloud beta run jobs create laborum-subareas-job `
-    --image gcr.io/vocational-insight-api/laborum-scraper-subareas:latest `
-    --region southamerica-east1 `
-    --set-env-vars "DB_USER=vi_dev,DB_PASS=}9$agO3IU.A2RJZ2,DB_HOST=3.238.81.238,DB_PORT=3306,DB_NAME=vocational_insight_model,PLAYWRIGHT_HEADLESS=True" `
-    --memory 1024Mi `
-    --task-timeout 900s
-
 gcloud scheduler jobs create pubsub laborum-subareas-job-scheduler `
     --schedule="0 22 1 * *" `
     --time-zone="America/Santiago" `
